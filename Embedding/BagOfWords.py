@@ -37,6 +37,15 @@ def to_vector(counts):
     except TypeError:
         print("Input not a dict.")
 
+##################################
+# 1. Each document through BoW is given a
+# digital fingerprint which can be used to compare mathematically.
+# 2. Each vector represents a straight line which can be measure for similarity
+# using cosine which outputs 0-1 for BoW:
+#             0 = no shared words (perpendicular, unrelated)
+#             1 = identical words (same angle, very similar)
+########################################################################################
+
 
 def main():
     doc = [
@@ -47,8 +56,8 @@ def main():
         "Dogs bark, cats purr, and birds sing."
     ]
     vocab = build_vocab(doc)
-    for sentence in doc:
-        vect = to_vector(bag_of_words(sentence, vocab))
+    for d in doc:
+        vect = to_vector(bag_of_words(d, vocab))
         print(vect)
 
 
