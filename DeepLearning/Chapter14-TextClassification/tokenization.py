@@ -1,4 +1,5 @@
 import re
+import PyPDF2 as pdf
 
 
 class WordTokenizer:
@@ -46,5 +47,18 @@ class WordTokenizer:
         return [index for index, token in self.vocabulary.items() if word == token][0]
 
 
+class CharacterTokenizer:
+    def __init__(self, vocabulary=None, max_size=20000):
+        if vocabulary is not None:
+            self.vocabulary = {"[UNk]"}
+        else:
+            self.vocabulary = None
+
+
 word_tokenizer = WordTokenizer()
-print(word_tokenizer("Hello my friends, my name is Kelan's"))
+
+# Loading Romeo and Juliet pdf
+romeo_juliet_text = pdf.PdfReader("book_pdf/romeo-and-juliet.pdf")
+for i in range(len(romeo_juliet_text.pages)):
+    page = romeo_juliet_text.pages[i].extract_text()
+    print(word_tokenizer(page), page)
