@@ -97,6 +97,74 @@ class CharacterTokenizer:
         return [index for index, t in self.vocabulary.items() if token == t][0]
 
 
+class SubWordTokenizer:
+    def __init__(self, vocabulary=None, max_size=20000):
+        if vocabulary is not None:
+            self.vocabulary = vocabulary
+        else:
+            self.vocabulary = {0: "[UNK]"}
+
+        self.max_size = max_size
+
+    def __call__(self, sequence):
+        tokens = self._standardize_split(sequence)
+        self.byte_pair_encode(tokens)
+
+    def byte_pair_encode(self, tokens):
+        while len(self.vocabulary.values()) < self.max_size:
+            pair = self._find_common_pair(tokens)
+
+            if not pair:
+                break
+
+            merged_tokens = ''.join(pair)
+            self.vocabulary[len(self.vocabulary)] = merged_tokens
+
+            tokens = self._merge_pair(tokens, pair)
+
+        return tokens
+
+    @staticmethod
+    def _merge_pair(tokens, common_pair):
+        new_tokens = []
+        for token in list(tokens):
+            new_token = []
+            for i in range(len(token) - 1):
+                pair = (token[i], token[i+1])
+
+                if pair == common_pair:
+                    new_token.append(token[i] + token[i+1])
+                else:
+                    new_token.append(token[i])
+
+            new_tokens.append(new_token)
+        return new_tokens
+
+    @staticmethod
+    def _find_common_pair(tokens):
+        common_pair = collections.Counter()
+
+        for token in tokens:
+            for i in range(len(token) - 1):
+                pair = (token[i], token[i + 1])
+                common_pair[pair] += 1
+
+        if not common_pair:
+            return None
+        return common_pair.most_common(1)[0][0]
+
+    @staticmethod
+    def _standardize_split(sequence):
+        standardize_seq = []
+        for word in sequence.split():
+            split_word = list(word.lower())
+            standardize_seq.append(split_word)
+        return standardize_seq
+
+    def _index(self, word):
+        return [index for index, token in self.vocabulary.items() if word == token][0]
+
+
 # Loading Romeo and Juliet pdf
 romeo_juliet_text = pdf.PdfReader("book_pdf/romeo-and-juliet.pdf")
 
@@ -135,9 +203,21 @@ def char_tok_test():
     return tokenized_book, num_tokens
 
 
-word_tok_book, word_tok_size = word_tok_test()
-char_tok_book, char_tok_size = char_tok_test()
+def token_count_test():
+    word_tok_book, word_tok_size = word_tok_test()
+    char_tok_book, char_tok_size = char_tok_test()
 
-print(f"Word Tokenizer input tokens: {word_tok_size}\nCharacter Tokenizer input tokens: {char_tok_size}")
+    print(f"Word Tokenizer input tokens: {word_tok_size}\nCharacter Tokenizer input tokens: {char_tok_size}")
 
-print(word_tok_book)
+
+def sub_word_tok_test():
+    sub_word_tokenizer = SubWordTokenizer()
+    sub_word_tokenizer("Hello my name, is kelan.")
+
+
+def main():
+    sub_word_tok_test()
+
+
+if __name__ == '__main__':
+    main()
