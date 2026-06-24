@@ -1,5 +1,6 @@
 import re
 import PyPDF2 as pdf
+import collections
 
 
 class WordTokenizer:
@@ -19,10 +20,13 @@ class WordTokenizer:
 
     def build_vocab(self, sequence, max_size=20000):
         tokens = self._standardize(self._split(sequence))
-
+        word_counts = collections.Counter()
         assert len(self.vocabulary) <= self.max_size, "Vocabulary exceeds max size!"
 
-        for token in tokens:
+        word_counts.update(tokens)
+
+        most_common = word_counts.most_common(max(0, max_size - len(self.vocabulary)))
+        for token, count in most_common:
             if token not in self.vocabulary.values():
                 self.vocabulary[len(self.vocabulary)] = token
 
@@ -110,6 +114,8 @@ def word_tok_test():
         tokenized_book.append(tokenized_page)
         num_tokens += len(tokenized_page)
 
+    print(word_tokenizer.vocabulary.values())
+
     return tokenized_book, num_tokens
 
 
@@ -133,3 +139,5 @@ word_tok_book, word_tok_size = word_tok_test()
 char_tok_book, char_tok_size = char_tok_test()
 
 print(f"Word Tokenizer input tokens: {word_tok_size}\nCharacter Tokenizer input tokens: {char_tok_size}")
+
+print(word_tok_book)
