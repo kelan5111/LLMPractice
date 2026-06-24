@@ -10,7 +10,7 @@ class WordTokenizer:
             self.vocabulary = vocabulary
 
         self.max_size = max_size
-        self.unk_id = ['|UNK|']
+        self.unk_id = ['[UNK]']
 
     def __call__(self, sequence):
         self.build_vocab(sequence)
@@ -50,15 +50,86 @@ class WordTokenizer:
 class CharacterTokenizer:
     def __init__(self, vocabulary=None, max_size=20000):
         if vocabulary is not None:
-            self.vocabulary = {"[UNk]"}
+            self.vocabulary = {0: "[UNK]"}
         else:
-            self.vocabulary = None
+            self.vocabulary = {}
 
+        self.max_size = max_size
+        self.unk_id = '[UNK]'
 
-word_tokenizer = WordTokenizer()
+    def __call__(self, sequence):
+        self.build_vocab(sequence)
+        tokenized_seq = self.tokenize(sequence)
+        return tokenized_seq
+
+    def build_vocab(self, sequence):
+        tokens = self._standardize(self._split(sequence))
+
+        assert len(self.vocabulary) <= self.max_size, "Vocabulary is too full."
+
+        for token in tokens:
+            if token not in self.vocabulary.values():
+                index = len(self.vocabulary)
+                self.vocabulary[index] = token
+
+    def tokenize(self, sequence):
+        tokens = self._standardize(self._split(sequence))
+        tokenized_seq = []
+        for token in tokens:
+            token_id = self._index(token)
+            tokenized_seq.append(token_id)
+        return tokenized_seq
+
+    @staticmethod
+    def _split(sequence):
+        pattern = r'\S'
+        return re.findall(pattern, sequence)
+
+    @staticmethod
+    def _standardize(sequence):
+        return [word.lower() for word in sequence]
+
+    def _index(self, token):
+        return [index for index, t in self.vocabulary.items() if token == t][0]
+
 
 # Loading Romeo and Juliet pdf
 romeo_juliet_text = pdf.PdfReader("book_pdf/romeo-and-juliet.pdf")
-for i in range(len(romeo_juliet_text.pages)):
-    page = romeo_juliet_text.pages[i].extract_text()
-    print(word_tokenizer(page), page)
+
+
+def word_tok_test():
+    word_tokenizer = WordTokenizer()
+
+    tokenized_book = []
+    num_tokens = 0
+
+    for i in range(len(romeo_juliet_text.pages)):
+        page = romeo_juliet_text.pages[i].extract_text()
+        tokenized_page = word_tokenizer(page)
+
+        tokenized_book.append(tokenized_page)
+        num_tokens += len(tokenized_page)
+
+    return tokenized_book, num_tokens
+
+
+def char_tok_test():
+    character_tokenizer = CharacterTokenizer()
+
+    tokenized_book = []
+    num_tokens = 0
+
+    for i in range(len(romeo_juliet_text.pages)):
+        page = romeo_juliet_text.pages[i].extract_text()
+        tokenized_page = character_tokenizer(page)
+
+        tokenized_book.append(tokenized_page)
+        num_tokens += len(tokenized_page)
+
+    return tokenized_book, num_tokens
+
+
+word_tok_book, word_tok_size = word_tok_test()
+char_tok_book, char_tok_size = char_tok_test()
+
+print(f"Word Tokenizer input tokens: {word_tok_size}\nCharacter Tokenizer input tokens: {char_tok_size}")
